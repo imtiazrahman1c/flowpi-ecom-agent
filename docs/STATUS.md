@@ -13,7 +13,7 @@
 | W06/dashboard | Implemented initial UI + SQL reports | Next build/type checks, report reconciliation | Browser E2E, pagination, role/assignment refinements, trends/costs |
 | W07 | Partial | Incidents, lease reconciliation, expired-conversation recovery | Independent uptime/alerting + operational drills |
 | n8n | W01 saved, unpublished | Workflow `p1V7zVprZKBJOC1U`; Asia/Dhaka; execution body persistence disabled | Verified preview URL + scoped machine credential; W02–W07 exports are not validated instance deployments |
-| Vercel preview | Blocked | Deployment API returned missing team grant | Owner team-access consent link required; no reconnect |
+| Vercel staging | Deployed + initial hosted checks passed | `dpl_DHDCFNhG5Esg9mWDaVBTvRTP3E38`, health 200; workspace/reports 401 without app auth | Owner sandbox signup + signed-in browser E2E |
 | Official providers | Blocked / not connected | UI identifies unconnected status | Owner approvals/credentials |
 | Production | Not ready, inactive | No customer sender/payment capture enabled | Full release gates in runbook |
 

@@ -15,4 +15,6 @@ Additional HTTP smoke: `node scripts/http-smoke.mjs` starts/stops the production
 
 n8n evidence: separate W01 sandbox workflow `p1V7zVprZKBJOC1U` saved with manual trigger, synthetic configuration and authenticated backend HTTP node; unpublished, not executed. Backend URL/merchant/credential placeholders remain until preview authorization and merchant authentication. Execution storage disabled and timezone set to Asia/Dhaka.
 
-Vercel preview attempt: blocked by a missing team access grant (403), so no deployed URL is claimed. Owner authorization requested through provider-issued consent link.
+Vercel staging is now READY after owner team-access approval. Deployment ID: `dpl_DHDCFNhG5Esg9mWDaVBTvRTP3E38`. Hosted health returned 200 with configured=true, offline_rules, live_sending=false. Unauthenticated hosted workspace and reports returned 401. Browser opened the configured login UI. Owner explicitly approved a temporary share link for testing. Signed-in browser E2E remains pending account creation.
+
+CI initially failed because missing environment configuration was checked before missing authentication. Auth is now checked first; the subsequent GitHub Actions run 40111629290 passed. Git-source deployments failed before build; direct source-file staging deployment succeeded after removing an unmatched Serverless Functions pattern. No production deployment became ready.
