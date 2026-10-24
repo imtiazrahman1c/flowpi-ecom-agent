@@ -113,7 +113,7 @@ export default function Workspace() {
         password: String(form.get("password")),
       };
       const { error } = signup
-        ? await db.auth.signUp(input)
+        ? await db.auth.signUp({ ...input, options: { emailRedirectTo: window.location.origin } })
         : await db.auth.signInWithPassword(input);
       if (error) throw Error(error.message);
       if (signup) setNotice("Check your email for confirmation, then sign in.");
