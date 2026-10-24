@@ -1,1 +1,7 @@
-{"functions":{"api/w01.mjs":{"maxDuration":60}},"regions":["sin1"]}
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": "apps/web/.next",
+  "regions": ["sin1"],
+  "functions": { "apps/web/app/api/w01/route.ts": { "maxDuration": 60 } }
+}

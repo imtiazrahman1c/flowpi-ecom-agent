@@ -1,0 +1,21 @@
+name: Verify sandbox build
+on:
+  pull_request:
+  push:
+    branches: [feat/v5-w01-foundation]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Require Node 24
+        run: node -e "if(Number(process.versions.node.split('.')[0])<22) process.exit(1)"
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high

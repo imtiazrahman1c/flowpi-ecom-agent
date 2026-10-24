@@ -1,43 +1,29 @@
-# FlowPi E-com Agent V5
+# FlowPi E-com Agent — V5.2 sandbox MVP
 
-Development foundation for the approved self-hosted n8n + Supabase + Vercel stack. W01 produces **drafts only**, never sends customer messages. Live customer workflows require owner approval.
+Master product specification: [docs/MASTER_SPEC_V5_2.md](docs/MASTER_SPEC_V5_2.md).
 
-## Implemented
+A Next.js/TypeScript merchant workspace backed by Supabase Auth/Postgres. Core navigation: Inbox, Orders, Products, Tasks, Reports, with a synthetic customer test lab. No live customer sending or financial capture is enabled.
 
-- Authenticated, merchant-scoped `POST /api/w01` with default-off enable switch.
-- OpenAI structured intent/query planning for Bangla, English, Banglish; bounded conversation history.
-- Tenant-scoped catalog search (name, SKU, multilingual aliases), separate price/stock re-read, 60-second freshness gate. Integer minor-unit BDT prices are rendered by code.
-- Approved policy lookup, human escalation, pending AI draft suppression on takeover.
-- Transactional event claim/deduplication, per-conversation serialization, message and draft logging.
-- Supabase foundation: eight private RLS-enabled tables and eight service-only RPC functions.
-- Inactive manual-only n8n W01 workflow export, without customer triggers or send nodes.
+## Run
 
-## Development
+Node 22+. `npm ci`, `npm test`, `npm run typecheck`, `npm run build`. For local development configure the two public Supabase environment variables in `.env.local`, then `npm run dev`. OpenAI API/model credentials are server-only and optional; without them the UI explicitly says offline rule planner. No real AI evaluation is claimed from deterministic tests.
 
-Node 22+; `npm ci`, `npm test`, `npm run check`. No runtime dependencies. Copy `.env.example` to an untracked `.env.local`. Configure secrets through secure Vercel/n8n credential interfaces, never GitHub or chat. No development server or remote deployment has been started yet.
+## What works in the implemented sandbox
 
-The endpoint accepts `{merchant_id,event_id,customer_id,channel,text}`. This is a trusted normalized internal envelope, **not** a raw Meta/WhatsApp webhook. A future channel gateway must validate provider signatures, map credentials to merchant, enforce rate limits, and normalize events before calling it.
+- Tenant membership and RLS; server-validated user identity; viewer read-only access.
+- Multilingual alias-based product inquiry through the W01 pipeline; canonical database price/stock verification, duplicate handling, logged drafts, human takeover.
+- Synthetic catalog seeding and transactional CSV import.
+- COD draft summary with server-calculated prices/fees, explicit confirmation, atomic inventory/outbox writes, retry safety and cancellation restrictions.
+- Separate order/payment/shipment/COD states; sandbox shipment simulator.
+- Follow-up eligibility review with no-send guard; incident capture; leased durable jobs/reconciliation; tenant-scoped reports.
+- Versioned inactive n8n W01–W07 exports with explicit blockers; W02 notification template intentionally blocks unconfigured external sends.
+
+See [test evidence](docs/TEST_EVIDENCE.md), [architecture/limitations](docs/ARCHITECTURE.md), [runbook](docs/RUNBOOK.md) and [workflow status](n8n/workflows/README.md).
 
 ## Infrastructure
 
-- GitHub: `imtiazrahman1c/flowpi-ecom-agent`
-- Supabase development ref: `rfmgtigefzofqxquxwvp` (Singapore)
-- Vercel development project: `flowpi-ecom-agent-v5-dev`
-- n8n: existing owner-hosted instance; login/import pending.
+Dedicated development Supabase ref `rfmgtigefzofqxquxwvp`, Vercel project `flowpi-ecom-agent-v5-dev`, GitHub `imtiazrahman1c/flowpi-ecom-agent`. The existing self-hosted n8n is authenticated; unrelated workflows remain unchanged. Migrations are applied to the development database; never re-run the initial schema over an existing project. Baseline `api/w01.mjs` is an older disabled internal ingress; the dashboard uses `apps/web/app/api/w01/route.ts`.
 
-Apply `db/foundation.sql` only to an empty dedicated development project. It is already applied to the above Supabase project. `db/smoke.sql` creates synthetic fixtures inside a transaction and rolls back everything.
+## Honest boundaries
 
-## Remaining before an end-to-end test
-
-1. Securely configure OpenAI API access and select a model supporting Responses structured output.
-2. Configure backend Supabase server credential and a random ingress token (at least 32 characters), bind one development merchant UUID, then enable development processing deliberately.
-3. Connect an authoritative store catalog/inventory source. Current Supabase catalog is empty; importing names/aliases is not a live inventory integration. `verified_at` must reflect a genuine source verification, never an arbitrary freshness refresh.
-4. Deploy a protected preview and validate it before importing/configuring n8n.
-5. In n8n, import `n8n/W01-development.json`, keep inactive, configure its backend URL, development merchant UUID, and HTTP Header Auth credential (`Authorization: Bearer <ingress token>`). Vercel protected previews also need authorized machine access configured securely.
-6. Run manual synthetic Bangla, English, Banglish cases. No channel send step is present.
-
-## Scope and limitations
-
-This is an initial functional backend slice, not completed production W01. Language detection is a heuristic; natural-language classification still needs real model evaluation. Product replies use localized templates. FAQ answers reproduce approved policy text in its stored language (no translation or vector RAG yet). Voice/image require human handling; W02/W03 are routed to human support, not implemented. No channel gateway, customer UI, automated delivery, live catalog sync, or production monitoring is claimed.
-
-A process crash can leave a conversation locked with `processing_event`. There is intentionally no unsafe automatic replay timeout. An operator must inspect the event/draft and reconcile before clearing it; no customer send can occur in this version. The service-role credential bypasses RLS, so all RPC queries enforce merchant constraints and the ingress token is bound to a single merchant. No frontend database access policies are installed.
+This is not a finished W01–W07 SaaS or production-ready release. Full conversational ordering, natural multilingual AI replies, voice/image, official Meta/payment/courier/catalog integration, staff assignment, complete support cases, billing, production monitoring and restore drills remain unfinished. Provider access/owner acceptance gates are documented. Do not enable live automations from this repository without approval.
