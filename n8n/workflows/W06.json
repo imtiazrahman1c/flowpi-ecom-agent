@@ -1,0 +1,91 @@
+{
+  "name": "FlowPi V5.2 | W06 Reports | SANDBOX INACTIVE",
+  "active": false,
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Inactive schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "envelope",
+      "name": "Synthetic configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{\"merchant_id\": \"REPLACE_DEV_MERCHANT_UUID\"}}];"
+      }
+    },
+    {
+      "id": "api",
+      "name": "Authenticated FlowPi API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://REPLACE_PREVIEW_HOST/api/reports?merchant=REPLACE_DEV_MERCHANT_UUID",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Inactive schedule": {
+      "main": [
+        [
+          {
+            "node": "Synthetic configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic configuration": {
+      "main": [
+        [
+          {
+            "node": "Authenticated FlowPi API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "timezone": "Asia/Dhaka"
+  },
+  "pinData": {}
+}

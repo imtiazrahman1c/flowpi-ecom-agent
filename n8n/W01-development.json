@@ -1,0 +1,84 @@
+{
+  "name": "FlowPi V5 | W01 | DEVELOPMENT ONLY",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Manual Test Only",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "fixture",
+      "name": "Synthetic Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{merchant_id:'REPLACE_WITH_DEV_MERCHANT_UUID',event_id:'manual-'+$execution.id,customer_id:'synthetic-test-only',channel:'website',text:'কালো টি শার্ট এর দাম কত?'}}];"
+      }
+    },
+    {
+      "id": "backend",
+      "name": "W01 Secure Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://REPLACE_WITH_VERIFIED_PREVIEW_HOST/api/w01",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Manual Test Only": {
+      "main": [
+        [
+          {
+            "node": "Synthetic Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic Fixture": {
+      "main": [
+        [
+          {
+            "node": "W01 Secure Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

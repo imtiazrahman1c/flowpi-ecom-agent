@@ -1,0 +1,21 @@
+begin;
+do $$declare m uuid;begin
+ select merchant_id into m from public.flowpi_memberships where user_id='ed000000-0000-4000-8000-000000000010';
+ if not exists(select 1 from public.flowpi_merchants where id=m and name='DISPOSABLE CONCURRENCY TEST · Sandbox') then raise exception 'fixture_identity_mismatch';end if;
+ delete from public.flowpi_cod_settlements where merchant_id=m;
+ delete from public.flowpi_shipments where merchant_id=m;
+ delete from public.flowpi_payments where merchant_id=m;
+ delete from public.flowpi_order_items where merchant_id=m;
+ delete from public.flowpi_orders where merchant_id=m;
+ delete from public.flowpi_inventory where merchant_id=m;
+ delete from public.flowpi_variants where merchant_id=m;
+ delete from public.flowpi_products where merchant_id=m;
+ delete from public.flowpi_policies where merchant_id=m;
+ delete from public.flowpi_outbox where merchant_id=m;
+ delete from public.flowpi_audit where merchant_id=m;
+ delete from public.flowpi_settings where merchant_id=m;
+ delete from public.flowpi_memberships where merchant_id=m;
+ delete from public.flowpi_merchants where id=m;
+ delete from auth.users where id='ed000000-0000-4000-8000-000000000010';
+end $$;
+commit;

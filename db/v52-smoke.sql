@@ -1,0 +1,52 @@
+begin;
+insert into auth.users(id) values('ed000000-0000-4000-8000-000000000001'),('ed000000-0000-4000-8000-000000000002'),('ed000000-0000-4000-8000-000000000003');
+select set_config('request.jwt.claims','{"sub":"ed000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+select public.flowpi_onboard_sandbox('TRANSACTION TEST');
+select set_config('request.jwt.claims','{"sub":"ed000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+select public.flowpi_onboard_sandbox('OTHER TENANT');
+select set_config('request.jwt.claims','{"sub":"ed000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+do $$declare m uuid;other uuid;v uuid;o public.flowpi_orders;r jsonb;token uuid;before_stock integer;after_stock integer;begin
+ select merchant_id into m from public.flowpi_memberships where user_id=auth.uid();
+ select merchant_id into other from public.flowpi_memberships where user_id='ed000000-0000-4000-8000-000000000002';
+ insert into public.flowpi_memberships values(m,'ed000000-0000-4000-8000-000000000003','viewer');
+ select id into v from public.flowpi_variants where merchant_id=m and sku='DEMO-SHOE-42';
+ if (select count(*) from public.flowpi_search(m,'কালো জুতা'))<>2 then raise exception 'multilingual_search_failed';end if;
+ if exists(select 1 from public.flowpi_verify(other,v)) then raise exception 'catalog_tenant_leak';end if;
+ select available into before_stock from public.flowpi_inventory where merchant_id=m and variant_id=v;
+ o=public.flowpi_create_order_draft(m,v,2,'Synthetic Buyer','01700000000','Dhaka','Synthetic address only');
+ if o.total_minor<>508000 then raise exception 'server_total_failed';end if;
+ begin perform public.flowpi_confirm_order(m,o.id,o.confirmation_token,false);raise exception 'missing_confirmation_accepted';exception when others then if sqlerrm='missing_confirmation_accepted' then raise;end if;end;
+ perform public.flowpi_confirm_order(m,o.id,o.confirmation_token,true);
+ perform public.flowpi_confirm_order(m,o.id,o.confirmation_token,true);
+ select available into after_stock from public.flowpi_inventory where merchant_id=m and variant_id=v;
+ if after_stock<>before_stock-2 then raise exception 'duplicate_stock_mutation';end if;
+ if (select count(*) from public.flowpi_outbox where merchant_id=m)<>1 then raise exception 'duplicate_outbox';end if;
+ perform public.flowpi_simulate_shipment(m,o.id,'booked');perform public.flowpi_simulate_shipment(m,o.id,'in_transit');perform public.flowpi_simulate_shipment(m,o.id,'delivered');
+ if (select status from public.flowpi_payments where order_id=o.id)<>'pending' or(select status from public.flowpi_cod_settlements where order_id=o.id)<>'uncollected' then raise exception 'shipment_changed_payment';end if;
+ r=public.flowpi_reports(m);if (r->>'confirmed_orders')::integer<>1 or(r->>'paid_minor')::integer<>0 then raise exception 'report_mismatch';end if;
+ r=public.flowpi_begin(m,'website','test','one','test');if r->>'status'<>'claimed' then raise exception 'claim_failed';end if;
+ perform public.flowpi_takeover(m,'website','test',true);
+ r=public.flowpi_finish(m,'website','test','one','{"status":"answered","reply":"must suppress"}');if r->>'status'<>'suppressed' then raise exception 'takeover_race';end if;
+ insert into public.flowpi_followups(merchant_id,channel,customer_id,consented,due_at) values(m,'website','test',true,now());
+ perform public.flowpi_followup_sweep(m);
+ if exists(select 1 from public.flowpi_followups where merchant_id=m and status<>'cancelled') then raise exception 'human_followup_not_stopped';end if;
+end $$;
+-- Exercise actual authenticated role + claims, not postgres bypass.
+set local role authenticated;
+do $$declare m uuid;other uuid;v uuid;begin
+ select merchant_id into m from public.flowpi_memberships where user_id=auth.uid();
+ if (select count(*) from public.flowpi_merchants)<>1 then raise exception 'RLS_tenant_leak';end if;
+ if (select count(*) from public.flowpi_memberships where user_id='ed000000-0000-4000-8000-000000000002')<>0 then raise exception 'RLS_membership_leak';end if;
+ begin perform public.flowpi_create_order_draft('00000000-0000-4000-8000-000000000000',gen_random_uuid(),1,'Test','01700000000','Dhaka','Synthetic test address');raise exception 'forbidden_call_accepted';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+select set_config('request.jwt.claims','{"sub":"ed000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
+set local role authenticated;
+do $$declare m uuid;begin
+ select merchant_id into m from public.flowpi_memberships where user_id=auth.uid();
+ if (select count(*) from public.flowpi_orders)<>1 then raise exception 'viewer_cannot_read';end if;
+ begin perform public.flowpi_create_order_draft(m,gen_random_uuid(),1,'Test','01700000000','Dhaka','Synthetic test address');raise exception 'viewer_write_accepted';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+select 'PASS: totals, explicit confirmation, idempotent stock/outbox, shipment/payment independence, report reconciliation, human takeover, follow-up stop, authenticated RLS and viewer write denial; rolled back' result;
+rollback;
