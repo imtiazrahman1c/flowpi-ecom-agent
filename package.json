@@ -1,0 +1,1 @@
+{"name":"flowpi-ecom-agent-v5","version":"0.1.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"test":"node --test","check":"node --check src/w01.mjs && node --check src/store.mjs && node --check api/w01.mjs"}}
