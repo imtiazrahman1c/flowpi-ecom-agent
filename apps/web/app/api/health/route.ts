@@ -10,7 +10,7 @@ export function GET() {
         process.env.NEXT_PUBLIC_SUPABASE_URL &&
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
       ),
-      ai_mode: process.env.OPENAI_API_KEY
+      ai_mode: process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL
         ? "model_configured_not_certified"
         : "offline_rules",
     },

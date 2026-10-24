@@ -60,7 +60,7 @@ export async function GET(req: Request) {
       merchant_id: chosen,
       tables: data,
       reports,
-      ai_mode: process.env.OPENAI_API_KEY ? "openai" : "offline_rules",
+      ai_mode: process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL ? "openai" : "offline_rules",
       live_sending: false,
     });
   } catch (e) {

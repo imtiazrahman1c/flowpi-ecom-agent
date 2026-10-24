@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { browserDB } from "../lib/supabase";
 import { parseCatalogCSV } from "../../../packages/shared/csv.mjs";
@@ -34,6 +34,7 @@ const when = (s: string) =>
     minute: "2-digit",
   });
 export default function Workspace() {
+  const sessionTokenRef = useRef<string | undefined>(undefined);
   const [session, setSession] = useState<Session | null>(null),
     [loaded, setLoaded] = useState(false),
     [data, setData] = useState<Data | null>(null),
@@ -47,6 +48,7 @@ export default function Workspace() {
     [chat, setChat] = useState<Row[]>([]),
     [customer, setCustomer] = useState(""),
     [message, setMessage] = useState("vai black shoe 42 size ase? price koto?");
+  sessionTokenRef.current = session?.access_token;
   useEffect(() => {
     setCustomer("sandbox-" + crypto.randomUUID());
     const db = browserDB();
@@ -72,6 +74,7 @@ export default function Workspace() {
       cache: "no-store",
     });
     const x = await r.json();
+    if (sessionTokenRef.current !== session?.access_token) throw Error("session_changed");
     if (!r.ok) throw Error(x.error ?? "Request failed");
     return x;
   }
@@ -84,6 +87,7 @@ export default function Workspace() {
     }
   }
   useEffect(() => {
+    setData(null);
     if (session) void refresh();
     else setData(null);
   }, [session?.access_token]);
