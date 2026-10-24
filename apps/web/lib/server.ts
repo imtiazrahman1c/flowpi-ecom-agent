@@ -11,10 +11,10 @@ export class HttpError extends Error {
 export async function userDB(req: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
     key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new HttpError("environment_not_configured", 503);
   const header = req.headers.get("authorization");
   if (!header?.startsWith("Bearer ") || header.length > 8192)
     throw new HttpError("authentication_required", 401);
+  if (!url || !key) throw new HttpError("environment_not_configured", 503);
   const token = header.slice(7);
   const db = createClient(url, key, {
     global: { headers: { Authorization: header } },
